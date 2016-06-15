@@ -26,18 +26,15 @@ INSERT INTO LOS_LEONES.Rol_Funcion(rolf_id,rolf_funcion) VALUES
 
 /*Cargo tabla Publi_Visibilidad desde la tabla maestra*/
 INSERT INTO LOS_LEONES.Publ_Visibilidad(publivisi_codigo,publivisi_descripcion,publivisi_precio,publivisi_porcentaje,publivisi_envio) 
-		SELECT DISTINCT Publicacion_Visibilidad_Cod,Publicacion_Visibilidad_Desc,Publicacion_Visibilidad_Precio,Publicacion_Visibilidad_Porcentaje, 0
+		SELECT DISTINCT Publicacion_Visibilidad_Cod,Publicacion_Visibilidad_Desc,Publicacion_Visibilidad_Precio,Publicacion_Visibilidad_Porcentaje,(
+		select case Publicacion_Visibilidad_Desc
+			when 'Gratis' then 0
+			else 1
+		end
+		) 
 		FROM gd_esquema.Maestra 
 		ORDER BY Publicacion_Visibilidad_Cod
 
-GO
-
-/*Cargo tabla de Calificaciones */
-INSERT INTO LOS_LEONES.Calificacion
-select distinct Calificacion_Codigo,Calificacion_Cant_Estrellas,Calificacion_Descripcion
-from gd_esquema.Maestra
-where Calificacion_Codigo is not null
-order by Calificacion_Codigo,Calificacion_Cant_Estrellas,Calificacion_Descripcion
 GO
 
 /*Cargo tabla Factura */
@@ -55,7 +52,6 @@ from gd_esquema.Maestra
 where Forma_Pago_Desc is not null
 go
 
-
 /*Cargo la tabla de Usuarios con datos de Clientes */
 INSERT INTO LOS_LEONES.Usuario(usu_nombre,usu_contrasenia,usu_rol,usu_nuevo,usu_habilitado)
 select distinct cast(Publ_Cli_Dni as nvarchar(255)), SUBSTRING(Publ_Cli_Apeliido,1,3) + SUBSTRING(Publ_Cli_Nombre,1,3),3,1,1
@@ -70,6 +66,19 @@ from gd_esquema.Maestra
 where Publ_Empresa_Cuit is not null
 go
 
+/*Cargo tabla de Calificaciones */
+INSERT INTO LOS_LEONES.Calificacion(cali_codigo,cali_cant_estrellas,cali_descripcion,cali_usuario)
+select distinct Calificacion_Codigo,Calificacion_Cant_Estrellas,Calificacion_Descripcion,
+	(
+	select top 1 U.usu_id
+	from LOS_LEONES.Usuario AS U
+	where U.usu_id % Calificacion_Cant_Estrellas = 0
+	) AS cali_usuario
+from gd_esquema.Maestra
+where Calificacion_Cant_Estrellas < 6 AND Calificacion_Codigo is not null
+GO
+
+select rand(1000)
 /*Cargo tabla Direccion Empresa */
 INSERT INTO LOS_LEONES.Direccion_Empresa
 select distinct Publ_Empresa_Dom_Calle,Publ_Empresa_Nro_Calle,Publ_Empresa_Piso,Publ_Empresa_Depto,Publ_Empresa_Cod_Postal,Publ_Empresa_Cuit
@@ -90,12 +99,11 @@ GO
 INSERT INTO LOS_LEONES.Persona_Cliente(pers_nombre,pers_apellido,pers_dni,pers_fecha_nacimiento,pers_mail,pers_tipo_dni,pers_telefono,pers_fecha_creacion,pers_direccion,pers_id_usuario)
 select distinct Publ_Cli_Nombre,Publ_Cli_Apeliido,Publ_Cli_Dni,Publ_Cli_Fecha_Nac,Publ_Cli_Mail,'DNI','0',GETDATE(),(
 				select D.dir_id
-				from LOS_LEONES.Direccion_Cliente AS D
-				where Publ_Cli_Dni = D.dir_dni) AS pers_direccion,(
+				from LOS_LEONES.Direccion_Cliente as D
+				where Publ_Cli_Dni = D.dir_dni)AS pers_direccion,(
 				select U.usu_id
-				from LOS_LEONES.Usuario AS U
-				where Publ_Cli_Dni = U.usu_nombre) AS pers_id_usuario
-							
+				from LOS_LEONES.Usuario as U
+				where ((cast (Publ_Cli_Dni as nvarchar(255))) = U.usu_nombre)) AS pers_id_usuario
 from gd_esquema.Maestra 
 where Publ_Cli_Dni is not NULL
 GO
@@ -112,35 +120,6 @@ select distinct Publ_Empresa_Razon_Social,Publ_Empresa_Cuit,Publ_Empresa_Fecha_C
 from gd_esquema.Maestra 
 where Publ_Empresa_Cuit is not null
 go
-/*Cargo la tabla de Publicacion */
-INSERT INTO LOS_LEONES.Publicacion(publi_id,publi_descripcion,publi_stock,publi_fecha_inicio,publi_fecha_vencimiento,publi_precio,publi_tipo,publi_usuario_responsable,publi_visibilidad,publi_id_rubro,publi_enviable,publi_calificaciones,publi_preguntable)
-select distinct Publicacion_Cod,Publicacion_Descripcion,Publicacion_Stock,Publicacion_Fecha,Publicacion_Fecha_Venc,Publicacion_Precio,Publicacion_Tipo,(
-				select U.usu_id
-				from LOS_LEONES.Usuario AS U
-				where 
-				
-				),Publicacion_Visibilidad_Cod,(),(),(),()
-
-from gd_esquema.Maestra
-GO
-
-/*Cargo la tabla de Ofertas */
-INSERT INTO LOS_LEONES.Ofertar(ofer_fecha,ofer_monto,ofer_publicacion,ofer_esGanadora)
-select distinct Oferta_Fecha,Oferta_Monto,(),()
-from gd_esquema.Maestra
-GO
-
-/*Cargo la tabla de compras */
-INSERT INTO LOS_LEONES.Comprar(comp_fecha,comp_cantidad,comp_factura_nro,comp_usuario,comp_id_publicacion,comp_forma_pago,comp_calificacion)
-select distinct Compra_Fecha,Compra_Fecha
-from gd_esquema.Maestra
-GO
-
-/*Cargo la tabla de Item_Factura */
-INSERT INTO LOS_LEONES.Item_Factura(itemf_id,itemf_id_visibilidad,itemf_item,itemf_monto_total,itemf_cantidad)
-select distinct (),(),(),Item_Factura_Monto,Item_Factura_Cantidad
-from gd_esquema.Maestra
-GO
 
 /*Cargo la tabla de Rubros */
 INSERT INTO LOS_LEONES.Rubro(rub_descripcion_corta,rub_descripcion_larga)
@@ -148,6 +127,42 @@ select distinct Publicacion_Rubro_Descripcion,Publicacion_Rubro_Descripcion
 from gd_esquema.Maestra
 where Publicacion_Rubro_Descripcion is not null
 GO
+
+/*Cargo la tabla de Publicacion */
+INSERT INTO LOS_LEONES.Publicacion(publi_id,publi_descripcion,publi_stock,publi_fecha_inicio,publi_fecha_vencimiento,publi_precio,publi_tipo,publi_estado,publi_usuario_responsable,publi_visibilidad,publi_id_rubro,publi_preguntable)
+select distinct Publicacion_Cod,Publicacion_Descripcion,Publicacion_Stock,Publicacion_Fecha,Publicacion_Fecha_Venc,Publicacion_Precio,Publicacion_Tipo,Publicacion_Estado,(
+				select U.usu_id
+				from LOS_LEONES.Usuario AS U
+				where cast(Publ_Cli_Dni as nvarchar(255)) = U.usu_nombre or cast(Publ_Empresa_Cuit as nvarchar(255)) = U.usu_nombre) AS publi_usuario_responsable,Publicacion_Visibilidad_Cod,
+				(
+				select R.rub_id
+				from LOS_LEONES.Rubro AS R
+				where Publicacion_Rubro_Descripcion = R.rub_descripcion_corta) AS publi_id_rubro,1
+
+from gd_esquema.Maestra
+where Publicacion_Cod is not null
+GO
+/* Cargo la tabla Item_Factura */
+
+
+/*Cargo la tabla de Ofertar */
+INSERT INTO LOS_LEONES.Ofertar(ofer_fecha,ofer_monto,ofer_esGanadora)
+select distinct Oferta_Fecha, Oferta_Monto,(
+				select P.publi_id
+				from LOS_LEONES.Publicacion AS P
+				where P.publi_tipo = 'Subasta') AS ofer_publicacion,0
+
+from gd_esquema.Maestra
+where Oferta_Fecha is not null
+GO
+
+/*Cargo la tabla de Compras */
+INSERT INTO LOS_LEONES.Comprar(comp_fecha,comp_cantidad,comp_factura_nro,comp_usuario,comp_id_publicacion,comp_forma_pago)
+select distinct Compra_Fecha, Compra_Cantidad,(
+from gd_esquema.Maestra
+GO
+
+
 
 COMMIT TRANSACTION
 GO
@@ -170,8 +185,11 @@ select * from LOS_LEONES.Factura
 select * from LOS_LEONES.Forma_Pago
 select * from LOS_LEONES.Usuario
 select * from LOS_LEONES.Empresa
-
+select * from LOS_LEONES.Persona_Cliente
 select * from LOS_LEONES.Rubro
+select * from LOS_LEONES.Calificacion
+
+
 /* CAMPO POR CAMPO */
 select Publ_Cli_Dni from gd_esquema.Maestra
 select Publ_Cli_Apeliido from gd_esquema.Maestra
@@ -205,7 +223,7 @@ select distinct Publ_Empresa_Razon_Social,Publ_Empresa_Cuit, Publ_Empresa_Fecha_
 from gd_esquema.Maestra where Publ_Empresa_Cuit is not NULL
 
 /* CAMPO POR CAMPO */
-select Publicacion_Cod from gd_esquema.Maestra
+select distinct Publicacion_Cod from gd_esquema.Maestra
 select Publicacion_Descripcion from gd_esquema.Maestra
 select Publicacion_Stock from gd_esquema.Maestra
 select Publicacion_Fecha from gd_esquema.Maestra
@@ -263,8 +281,8 @@ select Calificacion_Cant_Estrellas from gd_esquema.Maestra
 select Calificacion_Descripcion from gd_esquema.Maestra
 
 /*TODOS LOS CAMPOS DE CALIFICACION QUE NO SON NULL */
-select Calificacion_Codigo, Calificacion_Cant_Estrellas,Calificacion_Descripcion
-from gd_esquema.Maestra where Calificacion_Codigo is not NULL
+select distinct Calificacion_Codigo, Calificacion_Cant_Estrellas,Calificacion_Descripcion
+from gd_esquema.Maestra where Calificacion_Cant_Estrellas < 6  and Calificacion_Codigo is not NULL  
 
 /*CAMPO POR CAMPO */
 select Item_Factura_Monto from gd_esquema.Maestra

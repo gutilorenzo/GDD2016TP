@@ -51,8 +51,6 @@ create table LOS_LEONES.Rol_Funcion(
 	primary key (rolf_id, rolf_funcion)
 	)
 
-
-
 GO
 create table LOS_LEONES.Rubro(
 	rub_id numeric(6,0) identity(1,1) not null,
@@ -71,14 +69,7 @@ create table LOS_LEONES.Publ_Visibilidad(
 )
 
 GO
-create table LOS_LEONES.Calificacion(
-	cali_id numeric(18,0) not null,
-	cali_cant_estrellas numeric(18,0) not null,
-	cali_descripcion nvarchar(255),
-	primary key(cali_id)
-)
 
-GO
 create table LOS_LEONES.Factura(
 	fact_nro numeric(18,0) not null,
 	fact_fecha datetime not null,
@@ -107,6 +98,18 @@ create table LOS_LEONES.Usuario(
 )
 
 GO 
+
+create table LOS_LEONES.Calificacion(
+	cali_id numeric(18,0) identity(1,1) not null,
+	cali_codigo numeric(6,0) not null,
+	cali_cant_estrellas numeric(18,0) not null,
+	cali_descripcion nvarchar(255),
+	cali_usuario numeric(6,0),
+	primary key(cali_id)
+)
+
+GO
+
 create table LOS_LEONES.Persona_Cliente(
 	pers_id numeric(6,0) identity(1,1) not null,
 	pers_nombre nvarchar(255) not null,
@@ -169,15 +172,11 @@ create table LOS_LEONES.Publicacion(
 	publi_usuario_responsable numeric(6) not null,
 	publi_visibilidad numeric(18,0) not null,
 	publi_id_rubro numeric(6,0) not null,
-	publi_enviable bit not null,
-	publi_calificaciones numeric(18,0),
 	publi_preguntable bit,	
 	primary key(publi_id),
 	constraint FK_Publicacion_Usuario foreign key(publi_usuario_responsable) references LOS_LEONES.Usuario(usu_id),
 	constraint FK_Publicacion_Visibilidad foreign key(publi_visibilidad) references LOS_LEONES.Publ_Visibilidad(publivisi_codigo),
-	constraint FK_Publicacion_Rubro foreign key(publi_id_rubro) references LOS_LEONES.Rubro(rub_id),
-	constraint FK_Publicacion_Calificacion foreign key(publi_calificaciones) references LOS_LEONES.Calificacion(cali_id)
-	
+	constraint FK_Publicacion_Rubro foreign key(publi_id_rubro) references LOS_LEONES.Rubro(rub_id)
 )
 
 GO
@@ -189,13 +188,11 @@ create table LOS_LEONES.Comprar(
 	comp_usuario numeric(6,0) not null,
 	comp_id_publicacion numeric(18,0),
 	comp_forma_pago numeric(6,0),
-	comp_calificacion numeric(18,0),
 	primary key(comp_id),
 	constraint FK_Comprar_Factura foreign key(comp_factura_nro) references LOS_LEONES.Factura(fact_nro),
 	constraint FK_Comprar_Usuario foreign key(comp_usuario) references LOS_LEONES.Usuario(usu_id),
 	constraint FK_Comprar_Publicacion foreign key(comp_id_publicacion) references LOS_LEONES.Publicacion(publi_id),
 	constraint FK_Comprar_FormaPago foreign key(comp_forma_pago) references LOS_LEONES.Forma_Pago(fpago_id),
-	constraint FK_Comprar_Calificacion foreign key(comp_calificacion) references LOS_LEONES.Calificacion(cali_id)
 )
 GO
 create table LOS_LEONES.Ofertar(
